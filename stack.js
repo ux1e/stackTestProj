@@ -39,14 +39,14 @@ const generateOutput = (checksByMonth, unpaidServices) => {
   let output = '';
   for (const [month, services] of Object.entries(checksByMonth)) {
     for (const service of services) {
-      output += /${month}/${service}_${month}.pdf\n;
+      output += '/${month}/${service}_${month}.pdf\n';
     }
   }
   output += '\nне оплачены:\n';
   for (const [month, services] of Object.entries(unpaidServices)) {
-    output += ${month}:\n;
+    output += '${month}:\n';
     for (const service of services) {
-      output += ${service}\n;
+      output += '${service}\n';
     }
   }
   return output;
