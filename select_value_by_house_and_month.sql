@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION stack.select_value_by_house_and_month(
 RETURNS TABLE (
     acc INT,
     name TEXT,
-    value BIGINT
+    value INT
 )
 AS $$
 BEGIN
@@ -14,7 +14,7 @@ BEGIN
     a.number,
     c.name,
     COALESCE((
-      SELECT mp.value
+      SELECT mp.value::int
       FROM stack.Meter_Pok mp
       WHERE mp.month = date_trunc('month', input_month)
         AND mp.counter_id = c.row_id
