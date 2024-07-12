@@ -1,70 +1,70 @@
 const fs = require('fs');
 const path = require('path');
 
-const readChecks = (filePath) => {
-  const checkList = fs.readFileSync(filePath, 'utf8').split('\n').map(line => line.trim()).filter(line => line !== '');
-  return checkList;
+// Функция для чтения и обработки списка чеков из файла
+const getChecksFromFile = (filePath) => {
+  return fs.readFileSync(filePath, 'utf8')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line); 
 };
 
-const getUniqueServices = (checkList) => {
-  return checkList.reduce((acc, check) => {
-    const [service] = check.split('_');
-    acc.add(service);
-    return acc;
-  }, new Set());
-};
+// Функция для группировки чеков по месяцам и нахождения неоплаченных услуг
+const processChecks = (checkList) => {
+  const servicesByMonth = {};
+  const allServices = new Set();
 
-const groupByMonth = (checkList) => {
-  return checkList.reduce((acc, check) => {
+  for (const check of checkList) {
     const [service, month] = check.split('_');
     const monthName = month.replace('.pdf', '');
-    if (!acc[monthName]) {
-      acc[monthName] = [];
+
+    allServices.add(service);
+
+    if (!servicesByMonth[monthName]) {
+      servicesByMonth[monthName] = new Set();
     }
-    acc[monthName].push(service);
-    return acc;
-  }, {});
+    servicesByMonth[monthName].add(service);
+  }
+
+  const unpaidServices = {};
+  for (const [month, services] of Object.entries(servicesByMonth)) { // <--- Исправлено!
+    unpaidServices[month] = Array.from(allServices)
+      .filter(service => !services.has(service));
+  }
+
+  return { servicesByMonth, unpaidServices };
 };
 
-const findUnpaidServices = (checksByMonth, allServices) => {
-  return Object.entries(checksByMonth).reduce((acc, [month, services]) => {
-    const unpaid = Array.from(allServices).filter(service => !services.includes(service));
-    if (unpaid.length > 0) {
-      acc[month] = unpaid;
-    }
-    return acc;
-  }, {});
-};
-
-const generateOutput = (checksByMonth, unpaidServices) => {
+// Функция для генерации выходных данных
+const generateOutput = ({ servicesByMonth, unpaidServices }) => {
   let output = '';
-  for (const [month, services] of Object.entries(checksByMonth)) {
+
+  // Формируем список оплаченных услуг
+  for (const [month, services] of Object.entries(servicesByMonth)) {
     for (const service of services) {
-      output += /${month}/${service}_${month}.pdf\n;
+      output += `${month}/${service}_${month}.pdf\n`;
     }
   }
+
+  // Добавляем список неоплаченных услуг
   output += '\nне оплачены:\n';
   for (const [month, services] of Object.entries(unpaidServices)) {
-    output += ${month}:\n;
-    for (const service of services) {
-      output += ${service}\n;
+    if (services.length > 0) { 
+      output += `${month}:\n${services.join('\n')}\n`; 
     }
   }
+
   return output;
 };
 
-const processChecks = (inputFilePath, outputDir) => {
-  const checkList = readChecks(inputFilePath);
-  const allServices = getUniqueServices(checkList);
-  const checksByMonth = groupByMonth(checkList);
-  const unpaidServices = findUnpaidServices(checksByMonth, allServices);
-  const output = generateOutput(checksByMonth, unpaidServices);
+// Основная функция
+const main = () => {
+  const checkList = getChecksFromFile('чеки.txt');
+  const processedData = processChecks(checkList);
+  const output = generateOutput(processedData);
 
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
-
-  fs.writeFileSync(path.join(outputDir, 'чеки_по_папкам.txt'), output);
+  const scriptDir = __dirname;
+  fs.writeFileSync(path.join(scriptDir, 'чеки_по_папкам.txt'), output);
 };
 
-processChecks('чеки.txt', 'output');
+main();
