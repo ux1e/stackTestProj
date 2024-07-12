@@ -482,13 +482,13 @@ select * from stack.select_last_pok_by_service(1,'20230201')
 - tarif (Тариф показания)
 - value (Объем)
 Примеры вызова функции:
-select * from select_last_pok_by_acc(144)
+select * from stack.select_last_pok_by_acc(144)
 --acc|serv|date|tarif|value|
 --144	100	2023-02-21	1	0
 --144	200	2023-02-27	1	0
 --144	300	2023-02-28	1	100
 --144	400	2023-02-26	1	10
-select * from select_last_pok_by_acc(266)
+select * from stack.select_last_pok_by_acc(266)
 --266	300	2023-02-27	1	-90
 --266	300	2023-02-27	2	0
 --266	300	2023-02-27	3	13
