@@ -10,20 +10,18 @@ RETURNS TABLE (
 AS $$
 BEGIN
   RETURN QUERY
-  SELECT
+  SELECT 
     a.number,
-    c.service,
-    COUNT(mp.row_id)
-  FROM stack.Accounts AS a
-  JOIN stack.Counters AS c
-    ON a.row_id = c.acc_id
-  LEFT JOIN stack.Meter_Pok AS mp
-    ON c.row_id = mp.counter_id AND mp.date = input_date
-  WHERE
-    a.type = 3
-    AND c.service IN (SELECT UNNEST(string_to_array(service_numbers, ','))INT)
-  GROUP BY
-    a.number,
-    c.service;
+    s.service::int AS service,
+    SUM(CASE WHEN EXISTS (SELECT 1 
+                         FROM stack.Meter_Pok mp 
+                         WHERE mp.acc_id = a.row_id 
+                           AND mp.counter_id = c.row_id 
+                           AND mp.date = input_date) THEN 1 ELSE 0 END) AS count
+  FROM stack.Accounts a
+  JOIN stack.Counters c ON a.row_id = c.acc_id
+  JOIN unnest(string_to_array(service_numbers, ',')) AS s(service) ON c.service = s.service::int 
+  WHERE a.type = 3
+  GROUP BY a.number, s.service;
 END;
 $$ LANGUAGE plpgsql;
